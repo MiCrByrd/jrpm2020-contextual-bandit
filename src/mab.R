@@ -1,6 +1,4 @@
-##
-#
-createContainer <- function(n_arms, alpha, beta) {
+mabCreateContainer <- function(n_arms, alpha, beta) {
 
     return list(
         # priors
@@ -12,7 +10,7 @@ createContainer <- function(n_arms, alpha, beta) {
     )
 }
 
-updateContainer <- function(mab_container, arm_index, is_success) {
+mabUpdateContainer <- function(mab_container, arm_index, is_success) {
 
     mab_container$n_trials[arm_index] <- mab_container$n_trials + 1
     mab_container$n_success[arm_index] <- mab_container$n_success + is_success
@@ -21,7 +19,7 @@ updateContainer <- function(mab_container, arm_index, is_success) {
 
 }
 
-sampler <- function(mab_container) {
+mabRecommend <- function(mab_container) {
 
     a <- mab_container$n_success + mab_container$alpha
     b <- mab_container$n_trials - mab_container$n_success + mab_container$beta
@@ -33,8 +31,10 @@ sampler <- function(mab_container) {
         MoreArgs = list(n = 1)
     )
 
-    return(theta)
+    return(which.max(theta))
+
 }
+
 
 
 
