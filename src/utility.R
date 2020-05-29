@@ -63,6 +63,6 @@ calcChoiceProbability <- function(
     )
 
     xb <- features %*% coefficients$coefficients
-    return(1 / (1 + exp(-xb)))
+    return(c(1 / (1 + exp(-xb))))
 }
 
