@@ -53,13 +53,13 @@ pgtsCreateContainer <- function(
 # pgts_container: The pg-ts tracker list.
 # arm_index: The index for the arm suggested.
 # instance_features: Row vector of instance features.
-# arm_features: Matrix of arm features, each row for one arm.
+# arm_features: k \timex p matrix of arm features, each row for one arm.
 # is_success: Bool indicating if it was a success or not.
 pgtsUpdateValues <- function(
     pgts_container,
     arm_index,
     instance_features,
-    arm_features,
+    arms,
     is_success
 ) {
     # update time
@@ -100,6 +100,7 @@ pgtsSampler <- function(pgts_container) {
         )
     } 
 
+    # Gibbs sampler
     for (i in 1:pgts_container$n_sample) {
         z = pgdraw::pgdraw(1, c(x %*% curr_theta))   
 
@@ -116,12 +117,23 @@ pgtsSampler <- function(pgts_container) {
     return(curr_theta)
 }
 
+## Get arm recommendation from pg-ts for available data
+# pgts_container: pg-ts tracker list.
+# instance: vector of features for the instance
+# arms: arm tracker list.
 pgtsRecommender <- function(
     pgts_container, 
-    instance_features,
-    arm_features
+    instance,
+    arms
 ) {
+    # run gibbs sampler
     pgts_container$theta[,1] <- pgtsSampler(pgts_container)
+    # calculate prob of success for each arm with drawn coefficients
+    arm_probs = calcChoiceProbability(
+        instance = instance, 
+        arms = arms, 
+        coefficients = pgts_container$theta
+    )
 
-
+    return which.max(arm_probs)
 }
