@@ -4,13 +4,15 @@
 # beta: prior beta distribution parameter
 mabCreateContainer <- function(n_arms, alpha, beta) {
 
-    return list(
-        # priors
-        alpha = alpha,
-        beta = beta,
-        # outcomes
-        n_trials = rep(0, n_arms)
-        n_success = rep(0, n_arms)
+    return(
+        list(
+            # priors
+            alpha = alpha,
+            beta = beta,
+            # outcomes
+            n_trials = rep(0, n_arms),
+            n_success = rep(0, n_arms)
+        )
     )
 }
 
@@ -20,8 +22,12 @@ mabCreateContainer <- function(n_arms, alpha, beta) {
 # is_success: bool indicating the result of the arm
 mabUpdateContainer <- function(mab_container, arm_index, is_success) {
 
-    mab_container$n_trials[arm_index] <- mab_container$n_trials + 1
-    mab_container$n_success[arm_index] <- mab_container$n_success + is_success
+    mab_container$n_trials[arm_index] <- (
+        mab_container$n_trials[arm_index] + 1
+    )
+    mab_container$n_success[arm_index] <- (
+        mab_container$n_success[arm_index] + is_success
+    )
 
     return(mab_container)
 

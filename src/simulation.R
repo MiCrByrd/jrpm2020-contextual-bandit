@@ -58,7 +58,7 @@ banditSimulation <- function(
         mab_success <- rbinom(
             n = 1,
             size = 1,
-            prob = succ_prob[mab_success]
+            prob = succ_prob[mab_suggest]
         )
         ## add pgts
 

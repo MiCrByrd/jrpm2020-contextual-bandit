@@ -7,9 +7,9 @@ createArms <- function(n_arms, n_features) {
             n_arms = n_arms,
             n_features = n_features,
             features = matrix(
-                data = rnorm(n = n_arms * n_cts_features),
+                data = rnorm(n = n_arms * n_features),
                 nrow = n_arms,
-                ncol = n_cts_features
+                ncol = n_features
             )
         )
     )
@@ -70,13 +70,11 @@ calcChoiceProbability <- function(
 ) {
     broadcast_instance <- t(matrix(
             data = instance,
-            nrow = length(instance)
+            nrow = length(instance),
             ncol = arms$n_arms
     ))
 
     features <- cbind(
-        # instance features
-        broadcast_instance,
         # arm features
         arms$features,
         # interaction of instance and arm features - hacky but idk how else
