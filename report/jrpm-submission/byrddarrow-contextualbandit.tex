@@ -208,13 +208,18 @@ where
 $\theta_k \sim Beta(a,b)$
 for all $k = 1, \ldots, K$.
 Letting 
-$\pi(y \vert \theta_k) \sim Binom(\theta_k)$, 
-then, at time $t$, \bred{not correct, should only be success/fail for that arm}
+$\pi(y \vert \theta_k) \sim Bern(\theta_k)$, 
+then, at time $t$, the posterior distribution for the success of arm $k$ is
 \begin{equation}
-\pi(\theta_t \vert \bm{y}_t) \sim 
-Beta(a + t\bar{y}_t, b + t (1 - \bar{y}_t))
+\pi(\theta_k \vert \bm{y}_t) \sim 
+Beta(a + s_{t,k}, b + n_{t,k} - s_{t,k}),
 \end{equation}
-where $\bar{y}_t$ is the average of the successes at time $t$.  
+where 
+$n_{t,k} = \sum_{i = 1}^{t} \bm{1}(\alpha_i = k)$
+is the total number of times arm $k$ was recommended at time $t$
+and
+$s_{t,k} = \sum_{i = 1}^{t} \bm{1}(\alpha_i = k) y_i$ 
+is the total number of successes for arm $k$ at time $t$.
 Then, for the instance at time step $t + 1$, possible arm success probabilities,
 $\bm{\Theta}_{t+1}^* = (\theta_1^*, \ldots, \theta_K^*)$,
 are generated according to \bred{??}.
@@ -246,9 +251,8 @@ and success probability, such that
 for regression coefficients $\bm{\theta} \in \mathbb{R}^p$. 
 The function $h$ is assumed to be the logit function, 
 $h(x) = 1 / (1 + \exp(-x))$.
-Of course the contextual information can be used in any sort of model that gives a
-posterior distribution, like a Bayesian neural network \bred{??}, but this adds 
-additional complexity to the update process.
+Notably, any model that gives a posterior distribution, like a Bayesian neural network 
+\bred{??}, can be used, but this adds additional complexity to the update process.
 
 With the assumed likelihood $y_t \sim Bern(h(\bm{x}_{t,i}^T \bm{\theta}))$, the
 choice for the prior on the regression coefficients is still needed.
@@ -268,7 +272,7 @@ and illustrated great improvements over other contextual bandit algorithms.
 Here we briefly explore the data augmentation technique that facilitates the 
 sampling of the posterior distribution for the linear contextual bandit.
 A random variable $z$ is distributed according to a P\'olya-Gamma distribution
-with parameters $b > 0$ and $c \in \mathbb{R}$ if 
+with parameters $b \in \mathbb{R}^{+}$ and $c \in \mathbb{R}$ if 
 \begin{equation}
 z = \frac{1}{2\pi^2} \sum_{j = 1}^\infty \frac{g_k}{(j - 1/2)^2 + c^2/(4\pi^2)},
 \end{equation}
@@ -283,14 +287,14 @@ A useful identity was identified by \bred{??}, showing
 \int_0^\infty e^{-z\psi^2 / 2} p(z) dz
 \label{eq:pg-logit}
 \end{equation}
-where $z \sim PG(b,0)$.
+for $z \sim PG(b,0)$.
 Naturally \eqref{eq:pg-logit} bares resemblence to the logit function, where we
 can set $\psi = \bm{x}_{t,i}^T\bm{\theta}$.
 
 With some manipulation it can be shown that
 \begin{equation}
 \pi(\bm{\theta} \vert \bm{X}_t, \bm{y}_t, \bm{z}_t)
-\propto pi(\bm{\theta})
+\propto \pi(\bm{\theta})
 \prod_{i = 1}^t \exp(\frac{z_i}{2} (\bm{x}_{i,\alpha_i} - \kappa_i/z_i)^2)
 \label{eq:theta-update}
 \end{equation}
@@ -298,9 +302,17 @@ for $\kappa_i = y_i - 1/2$ and P\'olya-Gamma latent variables
 $\bm{z}_t = (z_1, \ldots, z_t)^T$. 
 When $\pi(\bm{\theta}) \sim N(\bm{\mu}, \bm{\Sigma})$ 
 for mean vector $\bm{\mu}$ and covariance matrix $\bm{\Sigma}$, then
-\eqref{eq:theta-update} is a Normal distribution.
+\eqref{eq:theta-update} is proportional to a Normal distribution.
 Further, it can be shown that the full-conditional distribution for the latent
-variables 
+variables $\bm{\theta}$ and $\bm{z}_t$ can be found in closed form
+\begin{align}
+\bm{\theta} & \sim N(\bm{\mu}^*, \bm{\Sigma}^*) \label{eq:coef-fullcond}\\
+\bm{z}_t & \sim PG(1, \bm{X}_t \bm{\theta}), \label{eq:aug-fullcond}.
+\end{align}
+where 
+$\bm{\Sigma}^* = (\bm{X}_t^T \bm{Z}_t \bm{X}_t + \bm{\Sigma}^{-1})^{-1}$
+and 
+$\bm{\mu}^* = \bm{\Sigma}^*(\bm{X}_t \kappa + \bm{\Sigma}^{-1}\bm{\mu})$
 
 \section{Simulation}
 
