@@ -1,0 +1,311 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{geometry}
+\usepackage{algorithm,float}
+\usepackage[noend]{algpseudocode}
+%\setlength\parindent{0pt}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{setspace}
+\usepackage[font={small,it}]{caption}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm}
+\usepackage{bm}
+\usepackage{color}
+\usepackage{epstopdf}
+\usepackage{pdflscape, amsthm}
+\usepackage{subcaption}
+\usepackage{multirow}
+
+\newcommand{\bred}[1]{\textbf{\textcolor{red}{#1}}}
+\newcommand{\bblue}[1]{\textbf{\textcolor{blue}{#1}}}
+
+\DeclareMathOperator*{\argmin}{\arg\!\min}
+\DeclareMathOperator*{\argmax}{\arg\!\max}
+\newtheorem{theorem}{Theorem}
+\newtheorem{condition}{Condition}
+\newtheorem{assumption}{Assumption}
+
+\title{SOMETHING}
+\author{Michael Byrd and Ross Darrow}
+
+% \linespread{1.5}
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Something for JRPM
+\end{abstract}
+
+\section{Introduction}
+
+\bred{Put why the JRPM audience would care here. I honestly don't know... should
+be a paragraph or two.}
+
+\bred{Minor lit review - focus mostly on empirical results, not theory.}
+
+\subsection{Overview}
+
+In Section \ref{sec:background} we present the foundation for bandit algorithms.
+This includes reviewing Thompson sampling.  
+Section \bred{??} then further inspects a contextual bandit algorithm using 
+Thompson sampling. 
+Here, we review the algorithm and inspect improvements to ease computation 
+\bred{and better support robust exploration}.
+In Section \bred{??} we implement a simulation study to investigate the potiential 
+performance improvements for the contextual algorithm over bandit algorithms that
+ignore the context.
+Finally Section \bred{??} offers final thoughts and future improvements.
+
+
+\section{Background} \label{sec:background}
+
+
+We consider the bandit problem with binary reward.
+For time step $t = 1, 2, \ldots$ suppose a recommendation is to be made from one 
+of $K$ possible options.
+Upon being received, the recommendation is either selected or not selected.
+The goal is to recommend the option that has the highest chance of success.
+Suppose, of the $K$ options available to recommend, that each option has $p_A$ 
+features.
+We refer to each option as an \textit{arm}, where 
+$\bm{a}_i \in \mathbb{R}^{p_A}$
+denotes the set of features associated with arm $i$. 
+Further suppose each instance has an additional $p_I$ features, denoted 
+$\bm{w}_t \in \mathbb{R}^{p_I}$.
+We use $\bm{x}_{t,i}$ to refer generally to the $i^{\text{th}}$ \textit{context} 
+at time $t$ as the collection of features composed of $\bm{w}_t$ and $\bm{a}_i$. 
+The contextual features include the arm features, instance features, and any 
+function of the two, such as interactions, and is assumed to be of dimension $p$.
+
+Let $y_t \in \{0,1\}$ be the reward from the recommendation at time $t$. 
+We assume that 
+\begin{equation}
+\mathbb{E}(y_t \vert \bm{x}_{t,i}) = f(\bm{x}_{t,i}; \bm{\Theta}),
+\end{equation}
+where $\bm{\Theta}$ are learnable parameters.
+We wish to recommend the arm 
+\begin{equation}
+\alpha_t^* = \argmax_i \left\{\mathbb{E}(y_t \vert \bm{x}_{t,i})\right\}_{i = 1}^K,
+\label{eq:optimal-arm}
+\end{equation}
+which corresponds to the arm with the highest expected reward; in the case of 
+a binary reward, \eqref{eq:optimal-arm} corresponds to the arm with the highest 
+probability of success.  
+Let $\alpha_t$ denote the index corresponding to the arm selected at time $t$ and 
+$\bm{\Theta}_t$ be the parameters learned at time $t$.
+Define the cumulative regret at time $t$ by
+\begin{equation}
+r_t = \sum_{j = 1}^{t} 
+f(x_{j, \alpha_j^*}, \bm{\Theta}) 
+- f(x_{j, \alpha_j}, \bm{\Theta}).
+\label{eq:regret}
+\end{equation}
+We assume the parameters $\bm{\Theta}_t$ are updated as frequently as 
+possible, preferably every iteration, though this may not always be the case in 
+practice \bred{??}.
+
+For instance... \bred{Airline example here}
+
+While tempting to always select the item that is estimated to give the highest
+expected reward, this could often lead to suboptimal results.
+Typically, bandit algorithms are used when historical data is not available.  
+Hence, it is reasonable that the optimal solution has yet to have been learned due
+to having no data to incorporate into the estimated $\bm{\Theta}_t$.
+This has inspired the exploration-exploitation trade-off \bred{??}, which aims to
+incorporate the uncertainty about undersampled arms when choosing the arm to 
+recommend.
+While many strategies exists \bred{??}, the general notion is that the more an 
+arm is sampled, the more certain we are about the outcome. 
+Hence, arms we are confident to perform worse than other arms will begin to never 
+be picked with time, ultimately converging to the arm that minimizes the regret 
+per each given instance.
+
+\subsection{Thompson Sampling for Bandit Problems}
+
+Many exploration policies exist in practice, but we focus on Thompson sampling 
+\bred{??}.
+Thompson sampling puts a prior distribution on $\bm{\Theta}$, and then aims to 
+iteratively update the posterior distribution with each newly observed example.
+Access to the posterior distribution quantifies the uncertainity of the estimate 
+of $\bm{\Theta}$ at time $t$.
+When making a recommendation, Thompson sampling algorithms generate 
+$\bm{\Theta}_t^*$ from the from the current posterior distribution and use it in 
+calculating the probability of success for each arm.
+This process incorporates the uncertainty of the estimate into the decision making 
+to allow better exploration.
+As time progresses, the estimate of $\bm{\Theta}$ will become more certain and
+the posterior distribution will contract around $\bm{\Theta}$, which leads to 
+$\bm{\Theta}_t^*$ often being close to $\bm{\Theta}$.
+Thompson sampling has been shown to efficiently trade-off exploring the set of 
+available arms with offering arms that more probable to be successful 
+\bred{??}.
+There has been considerable success achieved by Thompson sampling 
+\bred{??}, and it has empircally outperformed other bandit approaches \bred{??}.
+
+Formally, we assume that 
+$\bm{\Theta} \sim \pi(\bm{\Theta})$
+and are interested in iteratively computing 
+\begin{equation}
+\pi(\bm{\Theta} \vert \bm{X}, \bm{y})
+= \frac{
+    \pi(\bm{\Theta}) 
+    \pi(\bm{X}_t, \bm{y}_t \vert \bm{\Theta})}
+{\pi(\bm{X}_t, \bm{y}_t)},
+\label{eq:posterior-update}
+\end{equation}
+where 
+$\bm{X}_t = (\bm{x}_{1,\alpha_1}, \ldots, \bm{x}_{t,\alpha_t})^{T}$
+and 
+$\bm{y}_t = (y_1, \ldots, y_t)^{T}$
+denote the historical contexts for the arms recommended and their outcomes, 
+respectively.
+The denominator is often referred to the normalizing constant, where
+\begin{equation}
+\pi(\bm{X}, \bm{y})
+= \int_{\bm{\Theta}} 
+\pi(\bm{X}_t, \bm{y}_t \vert \bm{\Theta}) 
+\pi(\bm{\Theta}) 
+d\bm{\Theta}.
+\label{eq:norm-constant}
+\end{equation}
+Often \eqref{eq:norm-constant} can be intractable, however $\pi(\bm{\Theta})$
+and $\pi(\bm{X}_t, \bm{y}_t \vert \bm{\Theta})$ can be choosen to be conjugate
+which gives closed form updates for $\pi(\bm{\Theta} \vert \bm{X}, \bm{y})$ 
+\bred{??}. 
+Upon observing a new instance at time step $t + 1$, $\bm{\Theta}_{t+1}^*$ is drawn
+at random from $\pi(\bm{\Theta} \vert \bm{X}_t, \bm{y}_t)$ and used to select the 
+arm to be recommended as
+\[
+\alpha_t = \argmax_i \left\{f(\bm{x}_{t,i}; 
+\bm{\Theta}_{t+1}^*)\right\}_{i = 1}^{K}.
+\]
+Finally, the posterior is recomputed with the new recomendation and the outcome 
+as in \eqref{eq:posterior-update}.
+
+\subsection{Thompson Sampling for the Multi-Arm Bandit}
+
+To first illustrate Thompson sampling, we show it in the classic setting of the 
+multi-arm bandit problem. 
+The multi-arm bandit problem ignores the available context when making a 
+recommendation at each instance.
+In a sense, the multi-arm bandit is exploring the marginal success rate for each
+available arm.
+A Thompson sampler for a multi-arm bandit problem with binary reward puts a prior
+distribution on the probability of success and incorporates the empirical successes
+into the posterior update.
+This can easily be achieved using a beta prior and binomial likelihood, which is
+conjugate and gives closed form updates for \eqref{eq:posterior-update}.
+Then, at each iteration, each arm is randomly sampled from its corresponding 
+posterior distribution, and the arm with the highest sample is recommended.
+
+Formally, consider unknown success probabilities for each arm 
+$\bm{\Theta} = (\theta_1, \ldots, \theta_K)^T$,
+where 
+$\theta_k \sim Beta(a,b)$
+for all $k = 1, \ldots, K$.
+Letting 
+$\pi(y \vert \theta_k) \sim Binom(\theta_k)$, 
+then, at time $t$, \bred{not correct, should only be success/fail for that arm}
+\begin{equation}
+\pi(\theta_t \vert \bm{y}_t) \sim 
+Beta(a + t\bar{y}_t, b + t (1 - \bar{y}_t))
+\end{equation}
+where $\bar{y}_t$ is the average of the successes at time $t$.  
+Then, for the instance at time step $t + 1$, possible arm success probabilities,
+$\bm{\Theta}_{t+1}^* = (\theta_1^*, \ldots, \theta_K^*)$,
+are generated according to \bred{??}.
+The recommended arm is selected by 
+\begin{equation}
+\alpha_t^* = \argmax_i \{\theta_1^*, \ldots, \theta_K^*\}.
+\end{equation}
+As time progresses, the more the posterior distribution will reflect the potiential 
+success rate for each arm.
+With more observations, the tighter the $Beta$ posterior will contract about the 
+true success probability.
+Note that each arm's success probability is completely independent from on another.
+Hence, if contextual information gives insight into multi sets of arms, then the
+regret could better be minimized by more quickly finding optimal arm traits.
+
+\section{Thompson Sampling with Context}
+
+To illustrate the benefits of including contextual information, we inspect a 
+contextual bandit algorithm using Thompson sampling.
+While incorporating additional information can help reduce the overall regret, 
+it comes at the cost of complexity as conjugacy is not easily achieved for 
+\eqref{eq:posterior-update}.
+For the sake of complexity, we assume a linear relationship between the context 
+and success probability, such that
+\begin{equation}
+\mathbb{E}(y_t \vert \bm{x}_{t,i}) = h(\bm{x}_{t,i}^T \bm{\theta})
+\label{eq:logit-link}
+\end{equation}
+for regression coefficients $\bm{\theta} \in \mathbb{R}^p$. 
+The function $h$ is assumed to be the logit function, 
+$h(x) = 1 / (1 + \exp(-x))$.
+Of course the contextual information can be used in any sort of model that gives a
+posterior distribution, like a Bayesian neural network \bred{??}, but this adds 
+additional complexity to the update process.
+
+With the assumed likelihood $y_t \sim Bern(h(\bm{x}_{t,i}^T \bm{\theta}))$, the
+choice for the prior on the regression coefficients is still needed.
+This, however, causes problems due to the intractability of \eqref{eq:norm-constant}
+for most reasonable priors.
+Such issues are well known in Bayesian statistics, where heavy use of MCMC are 
+common place.
+A recent advance showed a data augmentation technique can facilitate efficient
+sampling algorithms for \eqref{eq:logit-link} when 
+$\pi(\bm{\theta}) \sim N(\bm{\mu}, \bm{\Sigma})$ 
+for mean vector $\bm{\mu}$ and covariance matrix $\bm{\Sigma}$ \bred{??}.
+This technique was adapted by \bred{??} in the context of Thompson sampling, 
+and illustrated great improvements over other contextual bandit algorithms.
+
+\subsection{P\'olya-Gamma Augmentation for Thompson Sampling}
+
+Here we briefly explore the data augmentation technique that facilitates the 
+sampling of the posterior distribution for the linear contextual bandit.
+A random variable $z$ is distributed according to a P\'olya-Gamma distribution
+with parameters $b > 0$ and $c \in \mathbb{R}$ if 
+\begin{equation}
+z = \frac{1}{2\pi^2} \sum_{j = 1}^\infty \frac{g_k}{(j - 1/2)^2 + c^2/(4\pi^2)},
+\end{equation}
+where 
+$g_j \sim Gamma(b,1)$ 
+for $j \in \mathbb{N}$; if $z$ is a P\'olya-Gamma random variable with parameters
+$b$ and $c$, then $z \sim PG(b,c)$. 
+A useful identity was identified by \bred{??}, showing
+\begin{equation}
+\frac{(e^\psi)^\alpha}{(1 + e^\psi)^b}
+= 2^{-b}e^{\kappa\psi}
+\int_0^\infty e^{-z\psi^2 / 2} p(z) dz
+\label{eq:pg-logit}
+\end{equation}
+where $z \sim PG(b,0)$.
+Naturally \eqref{eq:pg-logit} bares resemblence to the logit function, where we
+can set $\psi = \bm{x}_{t,i}^T\bm{\theta}$.
+
+With some manipulation it can be shown that
+\begin{equation}
+\pi(\bm{\theta} \vert \bm{X}_t, \bm{y}_t, \bm{z}_t)
+\propto pi(\bm{\theta})
+\prod_{i = 1}^t \exp(\frac{z_i}{2} (\bm{x}_{i,\alpha_i} - \kappa_i/z_i)^2)
+\label{eq:theta-update}
+\end{equation}
+for $\kappa_i = y_i - 1/2$ and P\'olya-Gamma latent variables 
+$\bm{z}_t = (z_1, \ldots, z_t)^T$. 
+When $\pi(\bm{\theta}) \sim N(\bm{\mu}, \bm{\Sigma})$ 
+for mean vector $\bm{\mu}$ and covariance matrix $\bm{\Sigma}$, then
+\eqref{eq:theta-update} is a Normal distribution.
+Further, it can be shown that the full-conditional distribution for the latent
+variables 
+
+\section{Simulation}
+
+
+\section{Conclusion}
+
+
+\end{document}
