@@ -1,4 +1,4 @@
-required(pgdraw) # for Polya-Gamma distribution
+require(pgdraw) # for Polya-Gamma distribution
 source('./utility.R')
 
 ## Create tracker list for PG-TS
@@ -24,10 +24,10 @@ pgtsCreateContainer <- function(
 
             # gibbs sampler param
             n_sample = n_sample,
-            window_size = window_size
+            window_size = window_size,
 
             # data
-            t = -1,
+            t = 0,
             x = matrix(
                 data = NA, 
                 nrow = window_size,
@@ -40,22 +40,57 @@ pgtsCreateContainer <- function(
             ),
 
             # coefficients
-            theta = matrix(
-                data = NA,
-                nrow = dim(mu)[1],
-                ncol = 1
-            )
+            theta = mu
         )
     )
+}
+
+## Sampler required for generating coefficients
+# pgts_container: The pg-ts tracker list.
+pgtsSampler <- function(pgts_container) {
+
+    if (pgts_container$t+1 >= pgts_container$window_size) {
+        x <- pgts_container$x
+        y <- pgts_container$y
+    } else {
+        # take the subset of the data matrix that currently exists
+        x <- pgts_container$x[1:pgts_container$t, , drop = F]
+        y <- pgts_container$y[1:pgts_container$t, 1, drop = F]
+    } 
+
+    kappa <- y - 1/2
+    curr_theta <- pgts_container$theta
+
+    # Gibbs sampler
+    for (i in 1:pgts_container$n_sample) {
+        z = pgdraw::pgdraw(1, c(x %*% curr_theta))
+
+        v <- solve(
+            (t(x) %*% diag(z, nrow = pgts_container$t) %*% x) 
+            + pgts_container$omega
+        )
+        m <- v %*% (t(x) %*% kappa + pgts_container$omega_x_mu)
+
+        curr_theta <- matrix(
+            data = MASS::mvrnorm(
+                n = 1,
+                mu = m,
+                Sigma = v
+            ),
+            ncol = 1
+        )
+    }
+
+    return(curr_theta)
 }
 
 ## Update the pg-ts tracker list
 # pgts_container: The pg-ts tracker list.
 # arm_index: The index for the arm suggested.
 # instance_features: Row vector of instance features.
-# arm_features: k \timex p matrix of arm features, each row for one arm.
+# arms: arm list
 # is_success: Bool indicating if it was a success or not.
-pgtsUpdateValues <- function(
+pgtsUpdateContainer <- function(
     pgts_container,
     arm_index,
     instance_features,
@@ -64,70 +99,33 @@ pgtsUpdateValues <- function(
 ) {
     # update time
     pgts_container$t = pgts_container$t + 1
-    i = (pgts_container$t %% pgts_container$window_size) + 1
+    i = pgts_container$t %% pgts_container$window_size
 
     # update observations
-    pgts_container$x[i,] = c(instance_features, arm_features[arm_index,])
-    pgts_container$y[i,] = is_success
-}
+    pgts_container$x[i,] = c(
+        arms$features[arm_index,],
+        makeInstanceArmInteractions(
+            instance = instance_features,
+            arms = arms
+        )[arm_index,]
+    )
+    pgts_container$y[i,1] = is_success
 
-## Sampler required for generating coefficients
-# pgts_container: The pg-ts tracker list.
-pgtsSampler <- function(pgts_container) {
+    # run gibbs sampler
+    pgts_container$theta <- pgtsSampler(pgts_container)
 
-    kappa <- pgts_container$y - 1/2
-
-    if (pgts_container$t == 0) {
-        # initialize theta to be the specified prior mean
-        curr_theta <- pgts_container$mu
-    } else {
-        curr_theta <- pgts_container$theta
-    }
-
-    if (pgts_container$t+1 >= window_size) {
-        x <- pgts_container$x
-        y <- pgts_container$y
-    } else {
-        # take the subset of the data matrix that currently exists
-        # constructor because I don't trust R's magic type converting
-        x <- matrix(
-            data = pgts_container$x[1:(pgts_container$t+1),], 
-            nrow = pgts_container$t + 1
-        )
-        y <- matrix(
-            data = pgts_container$y[1,(pgts_container$t+1)], 
-            nrow = pgts_container$t + 1
-        )
-    } 
-
-    # Gibbs sampler
-    for (i in 1:pgts_container$n_sample) {
-        z = pgdraw::pgdraw(1, c(x %*% curr_theta))   
-
-        v <- solve((t(x) %*% diag(z) %*% x) + pgts_container$omega)
-        m <- v %*% (t(x) %*% kappa + pgts_container$omega_x_mu)
-
-        curr_theta <- mvtnorm::rmvnorm(
-            n = 1,
-            mean = m,
-            sigma = v
-        )
-    }
-
-    return(curr_theta)
+    return(pgts_container)
 }
 
 ## Get arm recommendation from pg-ts for available data
 # pgts_container: pg-ts tracker list.
 # instance: vector of features for the instance
 # arms: arm tracker list.
-pgtsRecommender <- function(
+pgtsRecommend <- function(
     pgts_container, 
     instance,
     arms
 ) {
-    # run gibbs sampler
-    pgts_container$theta[,1] <- pgtsSampler(pgts_container)
     # calculate prob of success for each arm with drawn coefficients
     arm_probs = calcChoiceProbability(
         instance = instance, 
@@ -135,5 +133,5 @@ pgtsRecommender <- function(
         coefficients = pgts_container$theta
     )
 
-    return which.max(arm_probs)
+    return(which.max(arm_probs))
 }

@@ -48,12 +48,19 @@ createCoefficients <- function(
 ## For two feature matrices of same number of rows, create feature interactions.
 # m1: Matrix#1 
 # m2: Matrix#2 of the same number of rows as m1
-makeInteractions <- function(m1, m2) {
+makeInstanceArmInteractions <- function(instance, arms) {
+
+    broadcast_instance <- t(matrix(
+            data = instance,
+            nrow = length(instance),
+            ncol = arms$n_arms
+    ))
+
     return (
         do.call(
             what = cbind,
-            args = lapply(1:ncol(m1), function(i) {
-                m1[,i] * m2
+            args = lapply(1:ncol(broadcast_instance), function(i) {
+                broadcast_instance[,i] * arms$features
             })
         )
     )
@@ -68,23 +75,17 @@ calcChoiceProbability <- function(
     arms, 
     coefficients
 ) {
-    broadcast_instance <- t(matrix(
-            data = instance,
-            nrow = length(instance),
-            ncol = arms$n_arms
-    ))
-
     features <- cbind(
         # arm features
         arms$features,
         # interaction of instance and arm features - hacky but idk how else
-        makeInteractions(
-            m1 = broadcast_instance,
-            m2 = arms$features
+        makeInstanceArmInteractions(
+            instance = instance,
+            arms = arms
         )
     )
 
-    xb <- features %*% coefficients$coefficients
+    xb <- features %*% coefficients
     return(c(1 / (1 + exp(-xb))))
 }
 
