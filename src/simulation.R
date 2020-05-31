@@ -44,7 +44,7 @@ banditSimulation <- function(
         window_size = window_size
     )
 
-    for (i in 1:horizon) {
+    for (i in 1:horizon) { print(i)
         instance <- createInstance(n_instance_features)
 
         # make recommendations

@@ -49,7 +49,7 @@ pgtsCreateContainer <- function(
 # pgts_container: The pg-ts tracker list.
 pgtsSampler <- function(pgts_container) {
 
-    if (pgts_container$t+1 >= pgts_container$window_size) {
+    if (pgts_container$t >= pgts_container$window_size) {
         x <- pgts_container$x
         y <- pgts_container$y
     } else {
@@ -66,7 +66,7 @@ pgtsSampler <- function(pgts_container) {
         z = pgdraw::pgdraw(1, c(x %*% curr_theta))
 
         v <- solve(
-            (t(x) %*% diag(z, nrow = pgts_container$t) %*% x) 
+            (t(x) %*% diag(z, nrow = length(z)) %*% x) 
             + pgts_container$omega
         )
         m <- v %*% (t(x) %*% kappa + pgts_container$omega_x_mu)
@@ -100,6 +100,8 @@ pgtsUpdateContainer <- function(
     # update time
     pgts_container$t = pgts_container$t + 1
     i = pgts_container$t %% pgts_container$window_size
+    # why must R indexing start at 1... don't want to refactor
+    if (i == 0) i <- pgts_container$window_size
 
     # update observations
     pgts_container$x[i,] = c(
