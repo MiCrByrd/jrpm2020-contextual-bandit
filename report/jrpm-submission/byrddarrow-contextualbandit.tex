@@ -267,10 +267,11 @@ for mean vector $\bm{\mu}$ and covariance matrix $\bm{\Sigma}$ \bred{??}.
 This technique was adapted by \bred{??} in the context of Thompson sampling, 
 and illustrated great improvements over other contextual bandit algorithms.
 
-\subsection{P\'olya-Gamma Augmentation for Thompson Sampling}
+\subsection{P\'olya-Gamma Augmentation for Binomial Regression}
 
 Here we briefly explore the data augmentation technique that facilitates the 
-sampling of the posterior distribution for the linear contextual bandit.
+sampling of the posterior distribution for the linear contextual bandit with
+binary reward.
 A random variable $z$ is distributed according to a P\'olya-Gamma distribution
 with parameters $b \in \mathbb{R}^{+}$ and $c \in \mathbb{R}$ if 
 \begin{equation}
@@ -289,7 +290,8 @@ A useful identity was identified by \bred{??}, showing
 \end{equation}
 for $z \sim PG(b,0)$.
 Naturally \eqref{eq:pg-logit} bares resemblence to the logit function, where we
-can set $\psi = \bm{x}_{t,i}^T\bm{\theta}$.
+can set $\psi = \bm{x}_{t,i}^T\bm{\theta}$, and was adapted to Bayesian MCMC 
+procedures for posterior estimation.
 
 With some manipulation it can be shown that
 \begin{equation}
@@ -298,7 +300,7 @@ With some manipulation it can be shown that
 \prod_{i = 1}^t \exp(\frac{z_i}{2} (\bm{x}_{i,\alpha_i} - \kappa_i/z_i)^2)
 \label{eq:theta-update}
 \end{equation}
-for $\kappa_i = y_i - 1/2$ and P\'olya-Gamma latent variables 
+for $\kappa_i = y_i - 1/2$ and $PG(1,0)$ latent variables 
 $\bm{z}_t = (z_1, \ldots, z_t)^T$. 
 When $\pi(\bm{\theta}) \sim N(\bm{\mu}, \bm{\Sigma})$ 
 for mean vector $\bm{\mu}$ and covariance matrix $\bm{\Sigma}$, then
@@ -306,18 +308,68 @@ for mean vector $\bm{\mu}$ and covariance matrix $\bm{\Sigma}$, then
 Further, it can be shown that the full-conditional distribution for the latent
 variables $\bm{\theta}$ and $\bm{z}_t$ can be found in closed form
 \begin{align}
-\bm{\theta} & \sim N(\bm{\mu}^*, \bm{\Sigma}^*) \label{eq:coef-fullcond}\\
-\bm{z}_t & \sim PG(1, \bm{X}_t \bm{\theta}), \label{eq:aug-fullcond}.
+\bm{\theta} \vert \bm{X}_t, \bm{y}_t, \bm{z}_t & 
+\sim N(\bm{\mu}^*, \bm{\Sigma}^*) \label{eq:coef-fullcond}\\
+z_i \vert \bm{X}_t, \bm{y}_t, \bm{\theta} & 
+\sim PG(1, \bm{x}_{i,\alpha_i}^T \bm{\theta}) \label{eq:aug-fullcond},
 \end{align}
 where 
-$\bm{\Sigma}^* = (\bm{X}_t^T \bm{Z}_t \bm{X}_t + \bm{\Sigma}^{-1})^{-1}$
+$\bm{\Sigma}^* = (\bm{X}_t^T \bm{Z}_t \bm{X}_t + \bm{\Sigma}^{-1})^{-1}$,
+$\bm{Z} = diag(\bm{z}_t)$,
+$\bm{\mu}^* = \bm{\Sigma}^*(\bm{X}_t \bm{\kappa} + \bm{\Sigma}^{-1}\bm{\mu})$,
 and 
-$\bm{\mu}^* = \bm{\Sigma}^*(\bm{X}_t \kappa + \bm{\Sigma}^{-1}\bm{\mu})$
+$\bm{\kappa} = (\kappa_1, \ldots, \kappa_t)^T$
+By iteratively updating between \eqref{eq:coef-fullcond} and 
+\eqref{eq:aug-fullcond}, the posterior distributions can be estimated with 
+help from quick accept-reject sampling strategies \bred{??}.
+
+\subsection{P\'olya-Gamma Augmentation for Thompson Sampling}
+
+The P\'olya-Gamma distribution augmentation was incorporated into a Thompson 
+sampler by \bred{??} in a similar fashion to the presentation in \bred{??} for 
+Gibbs sampling binomial regression. 
+Upon receiving each instance, the P\'olya-Gamma Thompson sampler (PT-TS)
+approximates the posterior distribution of the regression coefficients, 
+$\bm{\theta}$, by drawing $M$ iterative samples of \eqref{eq:coef-fullcond} and
+\eqref{eq:aug-fullcond}.
+This allows incorporating the most recent data into the shape of the posterior,
+and progressively contracts the posterior distribution about the true regression
+coefficients.
+The $M^{\text{th}}$ draw of $\bm{\theta}$ is used as $\bm{\theta}^*$ and used
+in calculating \eqref{eq:logit-link} for each arm, which then suggests the arm 
+with largest expected success rate.
+
+The guidance in \bred{??} advocates for using $M = 100$, giving a large burn-in
+time to better traverse the posterior distribution.
+Having large burn-in times is ideal, but difficult to compute in practice.
+This is further complicated by the difficult operations in \eqref{eq:coef-fullcond}
+and \eqref{eq:aug-fullcond}, like matrix inversion, that are computationally 
+difficult.
+The use of $M = 1$ was found by \bred{??} to give competitive results.
+
 
 \section{Simulation}
 
 
 \section{Conclusion}
+
+The need for adaptive exploration of online retail continues to grow.  
+While many have addressed this issue with multi-arm bandit algorithms with great
+success, there is still room for improvement over simply estimating marginal
+success rates.
+Here we have explored a recent contextual extension of the well known Thompson
+sampler, called P\'olya-Gamma Thompson Sampling, and empircally illustrated the 
+potiential gains in terms of minimizing the regret of the recommendations.
+While improvements to the regret are realized, it does come at the cost of more
+computation.
+These computations can be somewhat mitgated by the rolling window we imposed.
+Alternatively, computation could be reduced by computing updates in batches, 
+rather than each iteration, or assuming the posterior covariance of the regression
+coefficients to be diagonal, simplifying the inverse operation.
+Regardless, as computational platforms continue to illustrate low-cost scalability,
+the improvement to the recommendation platform seems deserving of consideration.
+
+
 
 
 \end{document}
