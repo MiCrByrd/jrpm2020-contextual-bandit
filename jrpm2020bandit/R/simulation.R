@@ -12,6 +12,10 @@ banditSimulation <- function(
     n_sample,
     window_size
 ) {
+    if (len(n_sample) != len(window_size)) {
+        stop('n_sample and window_size must be the same length')
+    }
+
     # arms and underlying linear relationship
     arms <- createArms(
         n_arms = n_arms,
@@ -44,7 +48,8 @@ banditSimulation <- function(
         window_size = window_size
     )
 
-    for (i in 1:horizon) { print(i)
+    for (i in 1:horizon) { 
+        print(i)
         instance <- createInstance(n_instance_features)
 
         # make recommendations
