@@ -10,9 +10,17 @@ pgtsCreateContainer <- function(
     mu,
     sigma,
     n_sample,
-    window_size
+    window_size,
+    diagonal = False
 ) {
-    omega = solve(sigma)
+    if (diagonal) {
+        sigma = diag(sigma)
+        omega = 1 / sigma
+        omega_x_mu = mu * omega
+    } else {
+        omega = solve(sigma)
+        omega_x_mu = omega %*% mu
+    }
 
     return (
         list(
@@ -20,11 +28,12 @@ pgtsCreateContainer <- function(
             mu = mu,
             sigma = sigma,
             omega = omega,
-            omega_x_mu = omega %*% mu, # needed for each update
+            omega_x_mu = omega_x_mu, # needed for each update
 
             # gibbs sampler param
             n_sample = n_sample,
             window_size = window_size,
+            diagonal = diagonal,
 
             # data
             t = 0,
@@ -65,11 +74,17 @@ pgtsSampler <- function(pgts_container) {
     for (i in 1:pgts_container$n_sample) {
         z = pgdraw::pgdraw(1, c(x %*% curr_theta))
 
-        v <- solve(
-            (t(x) %*% diag(z, nrow = length(z)) %*% x) 
-            + pgts_container$omega
-        )
-        m <- v %*% (t(x) %*% kappa + pgts_container$omega_x_mu)
+        if (pgts_container$diagonal) {
+            v_diag <- 1 / colSums(x^2 * z)
+            v <- diag(v_diag)
+            m <- v_diag * (t(x) %*% kappa + pgts_container$omega_x_mu)
+        } else {
+            v <- solve(
+                (t(x) %*% diag(z, nrow = length(z)) %*% x) 
+                + pgts_container$omega
+            )
+            m <- v %*% (t(x) %*% kappa + pgts_container$omega_x_mu)
+        }
 
         curr_theta <- matrix(
             data = MASS::mvrnorm(
