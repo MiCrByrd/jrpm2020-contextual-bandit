@@ -1,0 +1,13 @@
+Package: jrpm2020bandit
+Title: Required functions to reproduce the simulation results.
+Version: 0.1
+Authors@R: person("Michael", "Byrd", email = "mcbyrd100@gmail.com",
+                  role = c("aut", "cre"))
+Description: Source functions to reproduce the simulation study 
+	presented in the Journal of Revenue and Pricing Management
+	special issue of AI in Travel.
+Depends: R (>= 3.1.0)
+Imports: 
+	MASS (>= 7.3.0),
+	pgdraw (>= 1.0)
+
