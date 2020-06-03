@@ -28,7 +28,7 @@
 \newtheorem{condition}{Condition}
 \newtheorem{assumption}{Assumption}
 
-\title{SOMETHING}
+\title{A Note on the Advantage of Context in Thompson Sampling}
 \author{Michael Byrd and Ross Darrow}
 
 % \linespread{1.5}
@@ -53,8 +53,7 @@ In Section \ref{sec:background} we present the foundation for bandit algorithms.
 This includes reviewing Thompson sampling.  
 Section \bred{??} then further inspects a contextual bandit algorithm using 
 Thompson sampling. 
-Here, we review the algorithm and inspect improvements to ease computation 
-\bred{and better support robust exploration}.
+Here, we review the algorithm and inspect improvements to ease computation.
 In Section \bred{??} we implement a simulation study to investigate the potiential 
 performance improvements for the contextual algorithm over bandit algorithms that
 ignore the context.
@@ -106,7 +105,7 @@ f(x_{j, \alpha_j^*}, \bm{\Theta})
 \end{equation}
 We assume the parameters $\bm{\Theta}_t$ are updated as frequently as 
 possible, preferably every iteration, though this may not always be the case in 
-practice \bred{??}.
+practice \cite{joulani2013online}.
 
 For instance... \bred{Airline example here}
 
@@ -115,11 +114,13 @@ expected reward, this could often lead to suboptimal results.
 Typically, bandit algorithms are used when historical data is not available.  
 Hence, it is reasonable that the optimal solution has yet to have been learned due
 to having no data to incorporate into the estimated $\bm{\Theta}_t$.
-This has inspired the exploration-exploitation trade-off \bred{??}, which aims to
-incorporate the uncertainty about undersampled arms when choosing the arm to 
-recommend.
-While many strategies exists \bred{??}, the general notion is that the more an 
-arm is sampled, the more certain we are about the outcome. 
+This has inspired the exploration-exploitation trade-off 
+\cite{audibert2009exploration}, which aims to incorporate the uncertainty about 
+undersampled arms when choosing the arm to recommend.
+While many strategies exists 
+\cite{chapelle2011empirical} \cite{garivier2011kl} \cite{karnin2013almost}, 
+the general notion is that the more an arm is sampled, the more certain we are 
+about the outcome. 
 Hence, arms we are confident to perform worse than other arms will begin to never 
 be picked with time, ultimately converging to the arm that minimizes the regret 
 per each given instance.
@@ -127,7 +128,7 @@ per each given instance.
 \subsection{Thompson Sampling for Bandit Problems}
 
 Many exploration policies exist in practice, but we focus on Thompson sampling 
-\bred{??}.
+\cite{chapelle2011empirical} \cite{agrawal2012analysis}.
 Thompson sampling puts a prior distribution on $\bm{\Theta}$, and then aims to 
 iteratively update the posterior distribution with each newly observed example.
 Access to the posterior distribution quantifies the uncertainity of the estimate 
@@ -142,9 +143,10 @@ the posterior distribution will contract around $\bm{\Theta}$, which leads to
 $\bm{\Theta}_t^*$ often being close to $\bm{\Theta}$.
 Thompson sampling has been shown to efficiently trade-off exploring the set of 
 available arms with offering arms that more probable to be successful 
-\bred{??}.
+\cite{kaufmann2012thompson}.
 There has been considerable success achieved by Thompson sampling 
-\bred{??}, and it has empircally outperformed other bandit approaches \bred{??}.
+\cite{ferreira2018online}, and it has empircally outperformed other multi-arm 
+bandit approaches \cite{chapelle2011empirical}.
 
 Formally, we assume that 
 $\bm{\Theta} \sim \pi(\bm{\Theta})$
@@ -175,7 +177,7 @@ d\bm{\Theta}.
 Often \eqref{eq:norm-constant} can be intractable, however $\pi(\bm{\Theta})$
 and $\pi(\bm{X}_t, \bm{y}_t \vert \bm{\Theta})$ can be choosen to be conjugate
 which gives closed form updates for $\pi(\bm{\Theta} \vert \bm{X}, \bm{y})$ 
-\bred{??}. 
+\cite{gelman2013bayesian}. 
 Upon observing a new instance at time step $t + 1$, $\bm{\Theta}_{t+1}^*$ is drawn
 at random from $\pi(\bm{\Theta} \vert \bm{X}_t, \bm{y}_t)$ and used to select the 
 arm to be recommended as
@@ -213,6 +215,7 @@ then, at time $t$, the posterior distribution for the success of arm $k$ is
 \begin{equation}
 \pi(\theta_k \vert \bm{y}_t) \sim 
 Beta(a + s_{t,k}, b + n_{t,k} - s_{t,k}),
+\label{eq:mab-posterior}
 \end{equation}
 where 
 $n_{t,k} = \sum_{i = 1}^{t} \bm{1}(\alpha_i = k)$
@@ -222,7 +225,7 @@ $s_{t,k} = \sum_{i = 1}^{t} \bm{1}(\alpha_i = k) y_i$
 is the total number of successes for arm $k$ at time $t$.
 Then, for the instance at time step $t + 1$, possible arm success probabilities,
 $\bm{\Theta}_{t+1}^* = (\theta_1^*, \ldots, \theta_K^*)$,
-are generated according to \bred{??}.
+are generated according to \eqref{eq:mab-posterior}.
 The recommended arm is selected by 
 \begin{equation}
 \alpha_t^* = \argmax_i \{\theta_1^*, \ldots, \theta_K^*\}.
@@ -251,8 +254,9 @@ and success probability, such that
 for regression coefficients $\bm{\theta} \in \mathbb{R}^p$. 
 The function $h$ is assumed to be the logit function, 
 $h(x) = 1 / (1 + \exp(-x))$.
-Notably, any model that gives a posterior distribution, like a Bayesian neural network 
-\bred{??}, can be used, but this adds additional complexity to the update process.
+Notably, any model that gives a posterior distribution, like a Bayesian neural 
+network \cite{riquelme2018deep}, can be used, but this adds additional complexity 
+to the update process.
 
 With the assumed likelihood $y_t \sim Bern(h(\bm{x}_{t,i}^T \bm{\theta}))$, the
 choice for the prior on the regression coefficients is still needed.
@@ -263,9 +267,11 @@ common place.
 A recent advance showed a data augmentation technique can facilitate efficient
 sampling algorithms for \eqref{eq:logit-link} when 
 $\pi(\bm{\theta}) \sim N(\bm{\mu}, \bm{\Sigma})$ 
-for mean vector $\bm{\mu}$ and covariance matrix $\bm{\Sigma}$ \bred{??}.
-This technique was adapted by \bred{??} in the context of Thompson sampling, 
-and illustrated great improvements over other contextual bandit algorithms.
+for mean vector $\bm{\mu}$ and covariance matrix $\bm{\Sigma}$ 
+\cite{polson2013bayesian}.
+This technique was adapted by \cite{dumitrascu2018pg} in the context of Thompson 
+sampling, and illustrated great improvements over other contextual bandit 
+algorithms.
 
 \subsection{P\'olya-Gamma Augmentation for Binomial Regression}
 
@@ -281,7 +287,7 @@ where
 $g_j \sim Gamma(b,1)$ 
 for $j \in \mathbb{N}$; if $z$ is a P\'olya-Gamma random variable with parameters
 $b$ and $c$, then $z \sim PG(b,c)$. 
-A useful identity was identified by \bred{??}, showing
+A useful identity was identified by \cite{polson2013bayesian}, showing
 \begin{equation}
 \frac{(e^\psi)^\alpha}{(1 + e^\psi)^b}
 = 2^{-b}e^{\kappa\psi}
@@ -321,13 +327,13 @@ and
 $\bm{\kappa} = (\kappa_1, \ldots, \kappa_t)^T$
 By iteratively updating between \eqref{eq:coef-fullcond} and 
 \eqref{eq:aug-fullcond}, the posterior distributions can be estimated with 
-help from quick accept-reject sampling strategies \bred{??}.
+help from quick accept-reject sampling strategies \cite{makalicpkg}.
 
 \subsection{P\'olya-Gamma Augmentation for Thompson Sampling}
 
 The P\'olya-Gamma distribution augmentation was incorporated into a Thompson 
-sampler by \bred{??} in a similar fashion to the presentation in \bred{??} for 
-Gibbs sampling binomial regression. 
+sampler by \cite{dumitrascu2018pg} in a similar fashion to the presentation in 
+\cite{polson2013bayesian} for a Gibbs sampler to estimate binomial regression. 
 Upon receiving each instance, the P\'olya-Gamma Thompson sampler (PT-TS)
 approximates the posterior distribution of the regression coefficients, 
 $\bm{\theta}$, by drawing $M$ iterative samples of \eqref{eq:coef-fullcond} and
@@ -337,15 +343,31 @@ and progressively contracts the posterior distribution about the true regression
 coefficients.
 The $M^{\text{th}}$ draw of $\bm{\theta}$ is used as $\bm{\theta}^*$ and used
 in calculating \eqref{eq:logit-link} for each arm, which then suggests the arm 
-with largest expected success rate.
+with largest expected success rate.  
+The full algorithm is specified in \bred{Algorithm ??}.
 
-The guidance in \bred{??} advocates for using $M = 100$, giving a large burn-in
-time to better traverse the posterior distribution.
+The guidance in \cite{dumitrascu2018pg} advocates for using $M = 100$, giving a 
+large burn-intime to better traverse the posterior distribution.
 Having large burn-in times is ideal, but difficult to compute in practice.
 This is further complicated by the difficult operations in \eqref{eq:coef-fullcond}
 and \eqref{eq:aug-fullcond}, like matrix inversion, that are computationally 
-difficult.
-The use of $M = 1$ was found by \bred{??} to give competitive results.
+difficult and must be performed in each iteration of the burn-in for each instance.
+The use of $M = 1$ was found by \cite{dumitrascu2018pg} to give competitive results.
+This result suggests that the algorithm can quickly move toward ideal regions of
+the posterior.
+
+As $t$ grows, the posterior distribution will shrink toward the $\bm{\theta}$, 
+giving little mass to be traversed. 
+This, of course, is ideal, as we desired to find the true underlying distribution;
+however, the incremental value of each data point will decrease as the uncertainty,
+as measured by $\bm{\Sigma}^*$, increasingly shrinks in magnitude.
+We further propose a rolling window over the data used, taking only the $min(L,t)$ 
+most recent observations and outcomes when estimating the posterior at time $t$.
+This (1) reduces the amount of computation and (2) allows for gradual adaption to 
+underlying changes in the underlying process.
+We find in our experiments that, for a reasonable value of $L$, there is minimal 
+difference in the observed regret between using all data or a rolling window.
+
 
 
 \section{Simulation}
@@ -367,9 +389,10 @@ Alternatively, computation could be reduced by computing updates in batches,
 rather than each iteration, or assuming the posterior covariance of the regression
 coefficients to be diagonal, simplifying the inverse operation.
 Regardless, as computational platforms continue to illustrate low-cost scalability,
-the improvement to the recommendation platform seems deserving of consideration.
+the improvement to the recommendation platform seems deserving of consideration
+for production systems.
 
-
-
+\bibliography{cites.bib}
+\bibliographystyle{abbrv}
 
 \end{document}
