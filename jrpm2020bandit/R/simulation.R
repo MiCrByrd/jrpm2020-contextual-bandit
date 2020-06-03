@@ -45,7 +45,6 @@ banditSimulation <- function(
     )
 
     for (i in 1:horizon) { 
-        print(i)
         instance <- createInstance(n_instance_features)
 
         # make recommendations
