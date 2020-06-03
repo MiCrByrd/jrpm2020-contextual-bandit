@@ -1,6 +1,3 @@
-require(pgdraw) # for Polya-Gamma distribution
-source('./utility.R')
-
 ## Create tracker list for PG-TS
 # mu: p \times 1 matrix for the prior mean.
 # sigma: p \times p matrix for the prior covariance. Must be positive definite.

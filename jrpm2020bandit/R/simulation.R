@@ -1,7 +1,3 @@
-source('./mab.R')
-source('./pgts.R')
-source('./utility.R')
-
 banditSimulation <- function(
     horizon,
     n_arms,
@@ -12,7 +8,7 @@ banditSimulation <- function(
     n_sample,
     window_size
 ) {
-    if (len(n_sample) != len(window_size)) {
+    if (length(n_sample) != length(window_size)) {
         stop('n_sample and window_size must be the same length')
     }
 
