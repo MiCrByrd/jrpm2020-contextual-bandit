@@ -7,6 +7,7 @@ c1 <- makeCluster(6)
 ## Small #arms Small #features
 exp1 <- parLapply(c1, 1:n_replicates, function(i) {
     library(jrpm2020bandit)
+    set.seed(1000+i)
     banditSimulation(
         horizon = 1000,
         n_arms = 10,
@@ -23,6 +24,7 @@ save(exp1, file = 'experiment1-results.Rdata')
 ## Small #arms Large #features
 exp2 <- parLapply(c1, 1:n_replicates, function(i) {
     library(jrpm2020bandit)
+    set.seed(1000+i)
     banditSimulation(
         horizon = 1000,
         n_arms = 10,
@@ -39,6 +41,7 @@ save(exp2, file = 'experiment2-results.Rdata')
 ## Large #arms Small #features
 exp3 <- parLapply(c1, 1:n_replicates, function(i) {
     library(jrpm2020bandit)
+    set.seed(1000+i)
     banditSimulation(
         horizon = 1000,
         n_arms = 100,
@@ -55,6 +58,7 @@ save(exp3, file = 'experiment3-results.Rdata')
 ## Large #arms Large #features
 exp4 <- parLapply(c1, 1:n_replicates, function(i) {
     library(jrpm2020bandit)
+    set.seed(1000+i)
     banditSimulation(
         horizon = 1000,
         n_arms = 100,
