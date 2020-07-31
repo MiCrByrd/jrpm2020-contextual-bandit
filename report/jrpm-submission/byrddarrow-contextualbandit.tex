@@ -18,6 +18,7 @@
 \usepackage{pdflscape, amsthm}
 \usepackage{subcaption}
 \usepackage{multirow}
+\usepackage{apacite}
 
 \newcommand{\bred}[1]{\textbf{\textcolor{red}{#1}}}
 \newcommand{\bblue}[1]{\textbf{\textcolor{blue}{#1}}}
@@ -28,6 +29,13 @@
 \newtheorem{condition}{Condition}
 \newtheorem{assumption}{Assumption}
 
+% Keywords command
+\providecommand{\keywords}[1]
+{
+  \small	
+  \textbf{\textit{Keywords---}} #1
+}
+
 \title{A Note on the Advantage of Context in Thompson Sampling}
 \author{Michael Byrd and Ross Darrow}
 
@@ -37,36 +45,101 @@
 \maketitle
 
 \begin{abstract}
-Something for JRPM
+Personalization has become a focal point of modern revenue management. 
+However, it is often the case that minimal data is available to appropriately 
+make suggestions tailored to each customer.
+This has led to many products making use of reinforcement learning based  
+algorithms to explore sets of offerings to find the best suggestions to 
+improve conversion and revenue.
+Arguably the most popular of these algorithms are built on the foundation of 
+the multi-arm bandit framework, which has shown great success across a variety 
+of use cases. 
+A general multi-arm bandit algorithm aims to tradeoff adaptively exploring 
+available, but under observed, recommendations, with the current known best
+offering. 
+While much success has been achieved with these relatively understandable 
+procedures, much of the airline industry is losing out on better personalized 
+offers by ignoring the context of the transaction, as is the case in the 
+traditional multi-arm bandit setup.
+Here, we explore a popular exploration heuristic, Thompson sampling, and note
+implementation details for multi-arm and contextual bandit variants.
+While the contextual bandit requires greater computational and technical 
+complexity to include contextual features in the decision process, we 
+illustrate the value it brings by the improvement in overall expected 
 \end{abstract}
+
+\keywords{bandit algorithms, online learning, e-commerce}
 
 \section{Introduction}
 
-\bred{Put why the JRPM audience would care here. I honestly don't know... should
-be a paragraph or two.}
+Real-time, model-driven insights become increasingly important for maintaining a
+competitive edge in the marketplace.
+Many upcoming applications of revenue management require or will be enhanced by 
+real-time experimentation. 
+Some examples:
+\begin{enumerate}
+\item \textbf{Ancillary pricing}. 
+While common to initialize ancillary prices with customer surveys and conjoint 
+analysis \cite{green2001thirty}, after initial prices are set it's often useful 
+to do live experiments to further optimize the prices. 
+Even well-designed experiments may not accurately capture the the true 
+willingness-to-pay of an item, and, worse, can not adapt to changing behaviors 
+over time without further studies. 
+\item \textbf{Personalized offers}.  
+Recently, under mild assumptions, it was estimated that profits could be improved 
+over 10\% by using personalized pricing \cite{dube2019personalized}.  
+For an introduction to offer management for airlines, see 
+\cite{vinod2018approach}.
+\item \textbf{Online shopping and booking}. 
+Airlines and online travel agencies want to experiment with different display 
+approaches to improve conversion. 
+\end{enumerate}
+ 
+Offline analysis, such as traditional A/B/n testing, has shown to be too slow to 
+adapt to the current rapidly changing marketplace.
+The main criticisms being that an A/B/n test is expected to run for a 
+predetermined amount of time while also uniformly allocating traffic allocation
+regardless of recently observed findings.
+To address these problems, reinforcement learning algorithms have been introduced
+to quickly learn toward an optimal solution in real-time. 
+Many problems fall into the bandit paradigm, which balances between recommending
+new offerings with the current known-best offering.
+The most well-known of these approaches is the multi-arm bandit 
+\cite{whittle1980multi}.
+The travel industry has begun making extensive use of multi-arm bandit algorithms
+to address many web-scale problems.
 
-\bred{Minor lit review - focus mostly on empirical results, not theory.}
+While the multi-arm bandit works well, the traditional algorithms ignore the
+available contextual data.  
+Incorporating each unique context into business decisions has been shown to help
+adaptively address similar issues with minimal data.
+For example, a well-known empirical experiment with the contextual bandit 
+illustrated substantial gains in performance for personalizing news articles
+\cite{li2010contextual}.
+To illustrate the advantage of using context, we explore a multi-arm bandit 
+algorithm employed by many in the travel industry, Thompson sampling, and
+show how recent advancements extended it to handle context.
 
 \subsection{Overview}
 
 In Section \ref{sec:background} we present the foundation for bandit algorithms.
 This includes reviewing Thompson sampling.  
-Section \bred{??} then further inspects a contextual bandit algorithm using 
+Section \ref{sec:pgts} then further inspects a contextual bandit algorithm using 
 Thompson sampling. 
 Here, we review the algorithm and inspect improvements to ease computation.
-In Section \bred{??} we implement a simulation study to investigate the potiential 
-performance improvements for the contextual algorithm over bandit algorithms that
-ignore the context.
-Finally Section \bred{??} offers final thoughts and future improvements.
-
+In Section \ref{sec:simulation} we implement a simulation study to investigate 
+the potential performance improvements for the contextual algorithm over bandit 
+algorithms that ignore the context.
+Finally Section \ref{sec:conclusion} offers final thoughts and future improvements.
 
 \section{Background} \label{sec:background}
-
 
 We consider the bandit problem with binary reward.
 For time step $t = 1, 2, \ldots$ suppose a recommendation is to be made from one 
 of $K$ possible options.
-Upon being received, the recommendation is either selected or not selected.
+Upon being received, the recommendation is either selected or not selected; we 
+note that these concepts can easily be adapted to incorporate the profitability
+into the decision process.
 The goal is to recommend the option that has the highest chance of success.
 Suppose, of the $K$ options available to recommend, that each option has $p_A$ 
 features.
@@ -107,7 +180,21 @@ We assume the parameters $\bm{\Theta}_t$ are updated as frequently as
 possible, preferably every iteration, though this may not always be the case in 
 practice \cite{joulani2013online}.
 
-For instance... \bred{Airline example here}
+For instance, a common problem in airline offer management is offering 
+personalized bundles to different travelers.
+Suppose each traveler arrives sequentially at time $t = 1, 2, \ldots$, where
+it is desired to offer the bundle which has the highest probability of being
+purchased.
+There are $K$ possible bundles, each having various add-ons like offering a
+checked bag or allowing for refunds on the ticket.
+Suppose each offering is one-hot encoded to encapsulate if the bundle contains
+that offering, then the offerings can represent the arm's feature set.
+The complete context can include an indicator if the traveler is a business 
+or leisure traveler, and all interactions of the bundle's offerings with the 
+traveler type. 
+Naturally, if the bundle was created sequentially by the traveler, each new
+suggestion to be potentially added into the bundle could incorporate the 
+outcome of prior suggestions.
 
 While tempting to always select the item that is estimated to give the highest
 expected reward, this could often lead to suboptimal results.
@@ -131,10 +218,10 @@ Many exploration policies exist in practice, but we focus on Thompson sampling
 \cite{chapelle2011empirical} \cite{agrawal2012analysis}.
 Thompson sampling puts a prior distribution on $\bm{\Theta}$, and then aims to 
 iteratively update the posterior distribution with each newly observed example.
-Access to the posterior distribution quantifies the uncertainity of the estimate 
+Access to the posterior distribution quantifies the uncertainty of the estimate 
 of $\bm{\Theta}$ at time $t$.
 When making a recommendation, Thompson sampling algorithms generate 
-$\bm{\Theta}_t^*$ from the from the current posterior distribution and use it in 
+$\bm{\Theta}_t^*$ from the current posterior distribution and use it in 
 calculating the probability of success for each arm.
 This process incorporates the uncertainty of the estimate into the decision making 
 to allow better exploration.
@@ -145,7 +232,7 @@ Thompson sampling has been shown to efficiently trade-off exploring the set of
 available arms with offering arms that more probable to be successful 
 \cite{kaufmann2012thompson}.
 There has been considerable success achieved by Thompson sampling 
-\cite{ferreira2018online}, and it has empircally outperformed other multi-arm 
+\cite{ferreira2018online}, and it has empirically outperformed other multi-arm 
 bandit approaches \cite{chapelle2011empirical}.
 
 Formally, we assume that 
@@ -175,7 +262,7 @@ d\bm{\Theta}.
 \label{eq:norm-constant}
 \end{equation}
 Often \eqref{eq:norm-constant} can be intractable, however $\pi(\bm{\Theta})$
-and $\pi(\bm{X}_t, \bm{y}_t \vert \bm{\Theta})$ can be choosen to be conjugate
+and $\pi(\bm{X}_t, \bm{y}_t \vert \bm{\Theta})$ can be chosen to be conjugate
 which gives closed form updates for $\pi(\bm{\Theta} \vert \bm{X}, \bm{y})$ 
 \cite{gelman2013bayesian}. 
 Upon observing a new instance at time step $t + 1$, $\bm{\Theta}_{t+1}^*$ is drawn
@@ -185,7 +272,7 @@ arm to be recommended as
 \alpha_t = \argmax_i \left\{f(\bm{x}_{t,i}; 
 \bm{\Theta}_{t+1}^*)\right\}_{i = 1}^{K}.
 \]
-Finally, the posterior is recomputed with the new recomendation and the outcome 
+Finally, the posterior is recomputed with the new recommendation and the outcome 
 as in \eqref{eq:posterior-update}.
 
 \subsection{Thompson Sampling for the Multi-Arm Bandit}
@@ -230,15 +317,16 @@ The recommended arm is selected by
 \begin{equation}
 \alpha_t^* = \argmax_i \{\theta_1^*, \ldots, \theta_K^*\}.
 \end{equation}
-As time progresses, the more the posterior distribution will reflect the potiential 
+As time progresses, the more the posterior distribution will reflect the potential 
 success rate for each arm.
 With more observations, the tighter the $Beta$ posterior will contract about the 
 true success probability.
-Note that each arm's success probability is completely independent from on another.
+Note that each arm's success probability is completely independent from one 
+another.
 Hence, if contextual information gives insight into multi sets of arms, then the
 regret could better be minimized by more quickly finding optimal arm traits.
 
-\section{Thompson Sampling with Context}
+\section{Thompson Sampling with Context} \label{sec:pgts}
 
 To illustrate the benefits of including contextual information, we inspect a 
 contextual bandit algorithm using Thompson sampling.
@@ -262,8 +350,8 @@ With the assumed likelihood $y_t \sim Bern(h(\bm{x}_{t,i}^T \bm{\theta}))$, the
 choice for the prior on the regression coefficients is still needed.
 This, however, causes problems due to the intractability of \eqref{eq:norm-constant}
 for most reasonable priors.
-Such issues are well known in Bayesian statistics, where heavy use of MCMC are 
-common place.
+Such issues are well known in Bayesian statistics, where heavy use of Gibbs 
+samplers are common place.
 A recent advance showed a data augmentation technique can facilitate efficient
 sampling algorithms for \eqref{eq:logit-link} when 
 $\pi(\bm{\theta}) \sim N(\bm{\mu}, \bm{\Sigma})$ 
@@ -295,7 +383,7 @@ A useful identity was identified by \cite{polson2013bayesian}, showing
 \label{eq:pg-logit}
 \end{equation}
 for $z \sim PG(b,0)$.
-Naturally \eqref{eq:pg-logit} bares resemblence to the logit function, where we
+Naturally \eqref{eq:pg-logit} bears resemblance to the logit function, where we
 can set $\psi = \bm{x}_{t,i}^T\bm{\theta}$, and was adapted to Bayesian MCMC 
 procedures for posterior estimation.
 
@@ -344,10 +432,9 @@ coefficients.
 The $M^{\text{th}}$ draw of $\bm{\theta}$ is used as $\bm{\theta}^*$ and used
 in calculating \eqref{eq:logit-link} for each arm, which then suggests the arm 
 with largest expected success rate.  
-The full algorithm is specified in \bred{Algorithm ??}.
 
 The guidance in \cite{dumitrascu2018pg} advocates for using $M = 100$, giving a 
-large burn-intime to better traverse the posterior distribution.
+large burn-in time to better traverse the posterior distribution.
 Having large burn-in times is ideal, but difficult to compute in practice.
 This is further complicated by the difficult operations in \eqref{eq:coef-fullcond}
 and \eqref{eq:aug-fullcond}, like matrix inversion, that are computationally 
@@ -368,23 +455,87 @@ underlying changes in the underlying process.
 We find in our experiments that, for a reasonable value of $L$, there is minimal 
 difference in the observed regret between using all data or a rolling window.
 
+\section{Simulation} \label{sec:simulation}
 
+We implement a small simulation study to illustrate the gain in using PG-TS over 
+Thompson sampling in the MAB setting.
+Each study is conducted assuming a linear relationship between the arm features
+and the interaction of the instance and arm features as in \eqref{eq:logit-link}; 
+note we do not include the instance features as they provide no information to 
+the preference of an arm by themselves.
+For a horizon of $T = 1000$ steps, we observe randomly generated instances and 
+recommend an arm for a random sampler, MAB Thompson sampler, and variants of the
+PG-TS sampler.
+Each instance is generated at random, where 
+$\bm{w}_t \sim N(\bm{0}_{p_I}, diag(\bm{1}_{p_I}))$
+for $t = 1 , \ldots, T$.
+We generate the arm feature values 
+$a_i \sim N(\bm{0}_{p_A}, diag(\bm{1}_{p_A}))$ 
+for $i = 1, \ldots, K$ and 
+regression coefficients 
+$\bm{\theta} \sim N(\bm{0}_p, diag(\bm{1}_p))$ 
+at time $t = 1$, which persist for the entire time horizon.
+We consider two settings: 
+\begin{enumerate}
+    \item $K = 10$ arms with 2 instance features and 2 arm features,
+    \item $K = 100$ arms with 2 instance features and 2 arm features.
+\end{enumerate}
+With 2 instance features and 2 arm features, then the model has a total of $p = 6$
+features.
+Each setting inspected is replicated 25 times.
 
-\section{Simulation}
+The MAB Thompson sampler is set with hyperparameters $a = 1$ and $b = 1$.
+For the PG-TS prior we assume
+$\bm{\theta} \sim N(\bm{0}_p, diag(\bm{1}_p))$
+for each version; we note that, while we assume a somewhat strong prior, the
+Gibbs sampler is valid under vague priors if unwilling to make such an assumption
+\cite{choi2017analysis}.
+We inspect PG-TS with a rolling window and without a rolling window, where, for 
+the rolling window, we set $L = 100$.
+Additionally we inspect the difference in changing the number of Gibbs sampler
+iterations at each instance, with $M = 25$ and $M = 1$.
+We permute each of the rolling window and Gibbs sampler iteration settings, 
+giving 4 variants of PG-TS.
+The performance is measured by the average cumulative regret, as calculated in 
+\eqref{eq:regret}, at each time $t = 1, \ldots, T$ for each method; additionally,
+we show the 5\% and 95\% percentiles for the cumulative regret at each time.
 
+We plot the results of Setting 1 and Setting 2 in Figure \ref{figure:main-results}.
+We opt to display the results for $M = 25$, but note that the $M = 1$ results were
+about 2.5 worse than the displayed PG-TS results; however, even with $M = 1$, both
+PG-TS outperformed the MAB Thompson sampler.
+The performance improvement from incorporating context is quite stark, where both 
+the rolling window and standard PG-TS procedures upper percentile bound is much 
+less than the MAB algorithm.
+Additionally, while the standard PG-TS does perform better than the rolling window 
+version, the difference is relatively small.
+The rolling window then seems to reduce the amount of computation at a minimal
+cost to the overall model.
 
-\section{Conclusion}
+\begin{figure}[t]
+\centering
+\begin{tabular}{c c}
+\includegraphics[scale = .4]{../../figures/experiment1-plot.pdf} &
+\includegraphics[scale = .4]{../../figures/experiment3-plot.pdf}
+\end{tabular}
+\caption{The average cumulative regret with the 5\% and 95\% percentile bands for
+the MAB Thompson sampler and PG-TS with and without a rolling window for $M = 25$.
+Both settings use $p = 6$ total context features with $K = 10$ and $K = 100$ arms.}
+\label{figure:main-results}
+\end{figure}
+
+\section{Conclusion} \label{sec:conclusion}
 
 The need for adaptive exploration of online retail continues to grow.  
 While many have addressed this issue with multi-arm bandit algorithms with great
 success, there is still room for improvement over simply estimating marginal
 success rates.
 Here we have explored a recent contextual extension of the well known Thompson
-sampler, called P\'olya-Gamma Thompson Sampling, and empircally illustrated the 
-potiential gains in terms of minimizing the regret of the recommendations.
+sampler, called P\'olya-Gamma Thompson Sampling, and empirically illustrated the 
+potential gains in terms of minimizing the regret of the recommendations.
 While improvements to the regret are realized, it does come at the cost of more
 computation.
-These computations can be somewhat mitgated by the rolling window we imposed.
+These computations can be somewhat mitigated by the rolling window we imposed.
 Alternatively, computation could be reduced by computing updates in batches, 
 rather than each iteration, or assuming the posterior covariance of the regression
 coefficients to be diagonal, simplifying the inverse operation.
@@ -393,6 +544,6 @@ the improvement to the recommendation platform seems deserving of consideration
 for production systems.
 
 \bibliography{cites.bib}
-\bibliographystyle{abbrv}
+\bibliographystyle{apacite}
 
 \end{document}

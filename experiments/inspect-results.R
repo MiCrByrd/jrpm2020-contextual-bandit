@@ -137,17 +137,17 @@ exp4_summary <- summarizeExperiment(exp4, 'average', c(.05, .95), c(1,2))
 # this is ran inside the experiments folder - change path accordingly
 ggsave(
     filename = '../figures/experiment1-plot.pdf', 
-    plot = plotRegretSummary(exp1_summary, 'Experiment#1 - Small #Arms & Small #Features')
+    plot = plotRegretSummary(exp1_summary, 'Setting#1') # Small #Arms & Large #Features
 )
-ggsave(
-    filename = '../figures/experiment2-plot.pdf', 
-    plot = plotRegretSummary(exp2_summary, 'Experiment#2 - Small #Arms & Large #Features')
-)
+# ggsave(
+#     filename = '../figures/experiment2-plot.pdf', 
+#     plot = plotRegretSummary(exp2_summary, 'Experiment#2 - Small #Arms & Large #Features')
+# )
 ggsave(
     filename = '../figures/experiment3-plot.pdf', 
-    plot = plotRegretSummary(exp3_summary, 'Experiment#1 - Large #Arms & Small #Features')
+    plot = plotRegretSummary(exp3_summary, 'Setting#2') # Large #Arms & Small #Features
 )
-ggsave(
-    filename = '../figures/experiment4-plot.pdf', 
-    plot = plotRegretSummary(exp4_summary, 'Experiment#1 - Large #Arms & Small #Features')
-)
+# ggsave(
+#     filename = '../figures/experiment4-plot.pdf', 
+#     plot = plotRegretSummary(exp4_summary, 'Experiment#4 - Large #Arms & Large #Features')
+# )
